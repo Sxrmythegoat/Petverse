@@ -1,1 +1,850 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PetVerse — PS99 Community</title><link rel="stylesheet" href="/style.css"></head><body><header><a class="brand" href="#">✦ Pet<span>Verse</span><small>PS99 COMMUNITY</small></a><nav><a href="#games">Games</a><a href="#leaderboard">Leaderboard</a><a href="#community">Community</a></nav><button id="account">Create account</button></header><main><section class="hero"><div><label>✦ THE PET SIMULATOR 99 COMMUNITY</label><h1>Play together.<br><em>Climb the ranks.</em></h1><p>Challenge friends, test your luck with demo points, and rise through the community leaderboard.</p><a class="btn" href="#games">Explore games ↗</a> <button class="btn secondary" id="heroAccount">Create account</button><p class="sub">✦ Server-processed demo games　✦ Virtual points only</p></div><div class="art"><div class="pet back">🐉<small>MYTHICAL</small></div><div class="pet front" aria-label="PetVerse cat mascot">🐱</div><div class="gem">💎 +250</div></div></section><section class="stats"><div><b id="count">0</b><small>COMMUNITY ACCOUNTS</small></div><div><b>4</b><small>GAME MODES</small></div><div><b>1,000</b><small>STARTING DEMO POINTS</small></div><div><b>24/7</b><small>COMMUNITY</small></div></section><section id="games"><div class="sectionhead"><div><label>PICK YOUR CHALLENGE</label><h2>Featured <em>games</em></h2></div><small>DEMO POINTS ONLY</small></div><div class="games"><article><div class="emoji">🎲</div><h3>Color Dice</h3><p>Choose two colors out of six. Will one match the roll?</p><div class="dots"><i class="red"></i><i class="blue"></i><i class="green"></i><i class="yellow"></i><i class="purple"></i><i class="orange"></i></div><button data-game="dice">Play Color Dice →</button></article><article><div class="emoji">🪙</div><h3>Coinflip</h3><p>Pick heads or tails and see where the coin lands.</p><div class="visual">◉　VS　◉</div><button data-game="coin">Play Coinflip →</button></article><article><div class="emoji">🚀</div><h3>Crash <small>PREVIEW</small></h3><p>Watch the multiplier climb in this UI preview.</p><div class="visual greenText">1.00x</div><button data-game="crash">Open Crash →</button></article><article><div class="emoji">💎</div><h3>Mines <small>PREVIEW</small></h3><p>Explore a grid in this non-wagering preview.</p><div class="tiles">💎　?　?　?　💎</div><button data-game="mines">Open Mines →</button></article></div></section><section class="bottom"><article id="leaderboard"><label>TOP PLAYERS</label><h2>Leaderboard <small>DEMO</small></h2><div class="leaderhead"><span>PLAYER</span><span>POINTS</span></div><div id="leaders" class="empty">Create a demo account to appear here.</div><button class="link" id="refresh">Refresh leaderboard ↻</button></article><article id="community"><label>SAY HELLO</label><h2>Community chat <small>●</small></h2><div id="messages" class="messages">Verify a demo account to chat.</div><form id="chatForm"><input id="chatInput" placeholder="Write a message..." maxlength="240"><button>➤</button></form><small>Be kind. No trading offers or personal information.</small></article></section><footer>✦ PetVerse is a fan-made community demo and is not affiliated with Roblox or BIG Games.<br>All points are fictional and have no cash or item value.</footer></main><div id="backdrop" class="backdrop hidden"><section class="modal"><button id="close" class="close">×</button><label>PETVERSE ACCOUNT</label><h2 id="modalTitle">Create your account</h2><p id="modalDesc">Use your Roblox username to create a demo profile.</p><form id="register"><label>Roblox username</label><input id="username" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]+" required placeholder="YourRobloxName"><label class="check"><input id="age" type="checkbox" required> I confirm I meet the age requirement applicable to me and agree to the demo rules.</label><small class="fine">This is a self-declaration, not age verification. No real pets, gems, money, or withdrawals are processed.</small><button class="wide">Create demo account</button></form><div id="verify" class="hidden"><h3>Demo verification</h3><p>Local prototype only. No Roblox profile is checked.</p><div id="code" class="code"></div><input id="codeInput" placeholder="Enter code"><button id="verifyButton" class="wide">Verify demo account</button></div><p id="error" class="error"></p></section></div><div id="toast" class="toast"></div><script src="/socket.io/socket.io.js"></script><script src="/app.js"></script></body></html>
+const $ = (selector) => document.querySelector(selector);
+const $all = (selector) => Array.from(document.querySelectorAll(selector));
+
+function safeJSONParse(value) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function safeSessionUser() {
+  const raw = sessionStorage.getItem('pvUser');
+  return raw ? safeJSONParse(raw) : null;
+}
+
+let user = safeSessionUser();
+let socket = null;
+
+function showToast(msg) {
+  const toast = $('#toast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2400);
+}
+
+function openModal() {
+  const modal = $('#backdrop');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeModal() {
+  const modal = $('#backdrop');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+function saveUser(nextUser) {
+  user = nextUser;
+  try {
+    sessionStorage.setItem('pvUser', JSON.stringify(user));
+  } catch {
+    // ignore storage problems in demo mode
+  }
+  updateUserUI();
+}
+
+function updateUserUI() {
+  if (!user) {
+    $('#heroAccount')?.setAttribute('data-label', 'Create account');
+    return;
+  }
+  $('#heroAccount')?.setAttribute('data-label', user.username || 'Demo user');
+}
+
+function escapeHtml(input) {
+  return String(input ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+async function api(url, options = {}) {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {})
+  };
+
+  if (user?.id) {
+    headers['x-demo-user'] = user.id;
+  }
+
+  const res = await fetch(url, {
+    ...options,
+    headers,
+    cache: 'no-store'
+  });
+
+  const raw = await res.text().catch(() => '');
+  let data = {};
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    data = { error: 'Invalid server response.' };
+  }
+
+  if (!res.ok) {
+    throw new Error(data.error || res.statusText || 'Request failed');
+  }
+
+  return data;
+}
+
+async function refreshLeaderboard() {
+  try {
+    const result = await api('/api/leaderboard');
+    const list = result.leaderboard || [];
+    const container = $('#leaders');
+    if (!container) return;
+
+    if (!list.length) {
+      container.innerHTML = '<div class="leader-row empty"><span>Awaiting first player</span></div>';
+      return;
+    }
+
+    container.innerHTML = list.map((entry, index) => `
+      <div class="leader-row">
+        <span class="rank rank-${index + 1}">${index + 1}</span>
+        <span>${escapeHtml(entry.username)}</span>
+        <span>${Number(entry.points || 0).toLocaleString()}</span>
+        <span>${entry.verified ? '✅' : '–'}</span>
+      </div>
+    `).join('');
+  } catch (error) {
+    console.error('Leaderboard error:', error);
+    const container = $('#leaders');
+    if (container) {
+      container.innerHTML = '<div class="leader-row empty"><span>Leaderboard unavailable</span></div>';
+    }
+  }
+}
+
+async function createAccount(username, ageConfirmed) {
+  try {
+    const result = await api('/api/register', {
+      method: 'POST',
+      body: JSON.stringify({ username, ageConfirmed })
+    });
+
+    if (result?.user) {
+      saveUser(result.user);
+      $('#codeBox').textContent = result.code || 'PV-XXXX';
+      $('#register').classList.add('hidden');
+      $('#verify').classList.remove('hidden');
+      $('#error').textContent = '';
+      showToast('Account created. Verify to continue.');
+    }
+  } catch (error) {
+    $('#error').textContent = error.message;
+  }
+}
+
+async function verifyDemoCode(code) {
+  try {
+    const result = await api('/api/verify-demo', {
+      method: 'POST',
+      body: JSON.stringify({ code })
+    });
+
+    if (result?.user) {
+      saveUser(result.user);
+      $('#verifyError').textContent = '';
+      $('#verify').classList.add('hidden');
+      closeModal();
+      connectSocket();
+      showToast('Verification complete');
+    }
+  } catch (error) {
+    $('#verifyError').textContent = error.message;
+  }
+}
+
+function addMessage(entry) {
+  const box = $('#messages');
+  if (!box) return;
+
+  const row = document.createElement('div');
+  row.className = 'chat-msg';
+  row.innerHTML = `
+    <strong>${escapeHtml(entry.username || 'User')}</strong>
+    <span>${escapeHtml(entry.message || '')}</span>
+    <time>${new Date(entry.at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>
+  `;
+
+  box.appendChild(row);
+  box.scrollTop = box.scrollHeight;
+}
+
+function connectSocket() {
+  if (!user?.verified || socket) return;
+  if (typeof io !== 'function') return;
+
+  socket = io();
+  socket.on('chat:history', (history = []) => {
+    const box = $('#messages');
+    if (!box) return;
+    box.innerHTML = '';
+    history.forEach(addMessage);
+  });
+
+  socket.on('chat:message', (entry) => {
+    addMessage(entry);
+  });
+}
+
+async function sendChat() {
+  const input = $('#chatInput');
+  if (!input) return;
+
+  const message = input.value.trim();
+  if (!message) return;
+
+  try {
+    await api('/api/chat', {
+      method: 'POST',
+      body: JSON.stringify({ message })
+    });
+    input.value = '';
+  } catch (error) {
+    showToast(error.message || 'Chat failed');
+  }
+}
+
+async function playGame(kind) {
+  if (!user) {
+    openModal();
+    showToast('Create an account first');
+    return;
+  }
+
+  try {
+    const result = await api(`/api/game/${kind}`, {
+      method: 'POST',
+      body: JSON.stringify({})
+    });
+
+    showToast(result.message || 'Round complete');
+    await refreshLeaderboard();
+  } catch (error) {
+    showToast(error.message || 'Game failed');
+  }
+}
+
+function bindEvents() {
+  $('#openRegister')?.addEventListener('click', () => {
+    $('#register').classList.remove('hidden');
+    $('#verify').classList.add('hidden');
+    $('#error').textContent = '';
+    $('#verifyError').textContent = '';
+    openModal();
+  });
+
+  $('#openRegisterSecondary')?.addEventListener('click', () => {
+    $('#openRegister').click();
+  });
+
+  $('#modalClose')?.addEventListener('click', closeModal);
+
+  $('#registerBtn')?.addEventListener('click', () => {
+    const username = $('#username')?.value.trim();
+    const ageConfirmed = !!$('#age')?.checked;
+
+    if (!username) {
+      $('#error').textContent = 'Please enter a username.';
+      return;
+    }
+
+    if (!ageConfirmed) {
+      $('#error').textContent = 'Please confirm the demo rules.';
+      return;
+    }
+
+    createAccount(username, ageConfirmed);
+  });
+
+  $('#verifyBtn')?.addEventListener('click', () => {
+    const code = $('#codeInput')?.value.trim();
+    if (!code) {
+      $('#verifyError').textContent = 'Enter the verification code.';
+      return;
+    }
+    verifyDemoCode(code);
+  });
+
+  $('#sendChat')?.addEventListener('click', sendChat);
+
+  $('#chatInput')?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      sendChat();
+    }
+  });
+
+  $('#refreshLeaderboard')?.addEventListener('click', refreshLeaderboard);
+
+  $all('[data-game]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const kind = button.dataset.game;
+      if (!kind) return;
+      if (kind === 'dice') playGame('color-dice');
+      if (kind === 'coinflip') playGame('coinflip');
+    });
+  });
+}
+
+async function boot() {
+  bindEvents();
+  updateUserUI();
+  await refreshLeaderboard();
+
+  if (user?.verified) {
+    connectSocket();
+  }
+
+  try {
+    const me = await api('/api/me');
+    if (me?.user) saveUser(me.user);
+  } catch {
+    // ignore when no session exists
+  }
+}
+
+boot();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
