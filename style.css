@@ -7,8 +7,6 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div class="site-bg"></div>
-
     <div class="page-shell">
       <header class="topbar">
         <div class="brand-wrap" aria-label="PetVerse home">
@@ -53,10 +51,10 @@
           </div>
 
           <div class="hero-art" aria-hidden="true">
-            <div class="mini-shape crystal-one"></div>
-            <div class="mini-shape crystal-two"></div>
-            <div class="mini-shape crystal-three"></div>
-            <div class="mini-shape crystal-four"></div>
+            <div class="floating-crystal crystal-a"></div>
+            <div class="floating-crystal crystal-b"></div>
+            <div class="floating-crystal crystal-c"></div>
+            <div class="floating-crystal crystal-d"></div>
 
             <div class="pet-scene">
               <div class="mini-pet pet-left">🐱</div>
@@ -75,19 +73,16 @@
             <div class="stat-number">0</div>
             <div class="stat-label">COMMUNITY ACCOUNTS</div>
           </div>
-
           <div class="stat-box">
             <div class="stat-icon">🎮</div>
             <div class="stat-number">4</div>
             <div class="stat-label">GAME MODES</div>
           </div>
-
           <div class="stat-box">
             <div class="stat-icon">💎</div>
             <div class="stat-number">1,000</div>
             <div class="stat-label">STARTING DEMO POINTS</div>
           </div>
-
           <div class="stat-box">
             <div class="stat-icon">◔</div>
             <div class="stat-number">24/7</div>
@@ -109,18 +104,31 @@
               <div class="game-emoji">🎲</div>
               <h3>Color Dice</h3>
               <p>Choose two colors out of six. Will one match the roll?</p>
+              <div class="color-row">
+                <span class="dot red"></span>
+                <span class="dot blue"></span>
+                <span class="dot green"></span>
+                <span class="dot yellow"></span>
+                <span class="dot purple"></span>
+                <span class="dot orange"></span>
+              </div>
               <button class="card-btn" type="button" data-game="dice">Play Color Dice →</button>
             </article>
 
             <article class="game-card card-purple" data-game="coinflip">
-              <div class="game-emoji">🪙</div>
+              <div class="game-emoji coin-emoji">🪙</div>
               <h3>Coinflip</h3>
               <p>Pick heads or tails and see where the coin lands.</p>
+              <div class="coin-wrap">
+                <span class="coin coin-heads">🪙</span>
+                <span class="vs">VS</span>
+                <span class="coin coin-tails">🪙</span>
+              </div>
               <button class="card-btn" type="button" data-game="coinflip">Play Coinflip →</button>
             </article>
 
             <article class="game-card card-gold">
-              <div class="game-emoji big-emoji">🚀</div>
+              <div class="game-emoji rocket-emoji">🚀</div>
               <h3>Crash <small>Preview</small></h3>
               <p>Watch the multiplier climb in this UI preview.</p>
               <div class="multiplier">1.00x</div>
@@ -131,6 +139,10 @@
               <div class="game-emoji grid-emoji">❔</div>
               <h3>Mines</h3>
               <p>Explore a grid and risk it in this non-wagering preview.</p>
+              <div class="mine-grid">
+                <span>?</span><span>?</span><span>?</span><span>?</span>
+                <span>?</span><span>?</span><span>?</span><span>?</span>
+              </div>
               <button class="card-btn" type="button">Open Mines →</button>
             </article>
           </div>
