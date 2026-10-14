@@ -1,997 +1,262 @@
-
-:root {
-  --bg: #06152e;
-  --panel: #092044;
-  --panel-light: #10305d;
-  --line: #1558a5;
-  --text: #f4f9ff;
-  --muted: #a9c5e9;
-  --blue: #087cff;
-  --cyan: #17d5ff;
-  --gold: #ffd84d;
-  --purple: #8069ff;
-  --green: #00dba0;
-  --shadow: 0 14px 38px #00102b70;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html {
-  scroll-behavior: smooth;
-  scroll-padding-top: 90px;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  background:
-    radial-gradient(ellipse at 50% -20%, #1259a5 0, transparent 55%),
-    linear-gradient(180deg, #061a39, var(--bg) 70%);
-  color: var(--text);
-  font: 15px/1.5 Inter, system-ui, sans-serif;
-}
-
-header {
-  min-height: 76px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 12px max(calc((100vw - 1200px) / 2), 24px);
-  background: #061a36f2;
-  border-bottom: 1px solid #1685ff65;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 5px 25px #00102b55;
-}
-
-.brand {
-  color: white;
-  font-size: 27px;
-  font-weight: 1000;
-  letter-spacing: -1.3px;
-  line-height: 1.05;
-  text-decoration: none;
-  white-space: nowrap;
-  text-shadow: 0 3px 0 #06377e;
-}
-
-.brand span,
-em {
-  color: var(--gold);
-  font-style: normal;
-}
-
-.brand small {
-  display: block;
-  margin-top: 5px;
-  color: #76dfff;
-  font-size: 9px;
-  letter-spacing: 2.5px;
-}
-
-nav {
-  display: flex;
-  align-items: center;
-  gap: 26px;
-}
-
-nav a {
-  color: #d6e8ff;
-  font-size: 13px;
-  font-weight: 750;
-  text-decoration: none;
-  transition: color .18s ease;
-}
-
-nav a:hover {
-  color: var(--cyan);
-}
-
-button,
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: 1px solid #4dbaff;
-  border-radius: 12px;
-  padding: 12px 17px;
-  background: linear-gradient(180deg, #24b9ff, #0870ff 75%);
-  box-shadow: 0 4px 0 #0348a8, 0 7px 18px #006bff30;
-  color: white;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 850;
-  text-decoration: none;
-  cursor: pointer;
-  transition: transform .15s ease, filter .15s ease;
-}
-
-button:hover,
-.btn:hover {
-  filter: brightness(1.12);
-  transform: translateY(-1px);
-}
-
-button:active,
-.btn:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 #0348a8;
-}
-
-button:disabled {
-  opacity: .5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.secondary {
-  background: #0a2850;
-  border-color: #3b8dff;
-  box-shadow: none;
-}
-
-main {
-  max-width: 1200px;
-  margin: auto;
-  padding: 0 24px;
-}
-
-.hero {
-  display: grid;
-  grid-template-columns: 1.05fr .95fr;
-  align-items: center;
-  gap: 30px;
-  min-height: 385px;
-  padding: 38px 22px 30px;
-  margin: 22px 0 0;
-  border: 1px solid #238bff55;
-  border-radius: 24px;
-  overflow: hidden;
-  background:
-    radial-gradient(ellipse at 80% 50%, #1267b75c, transparent 55%),
-    linear-gradient(115deg, #08234b, #061733);
-  box-shadow: var(--shadow);
-}
-
-.hero label,
-section > label,
-.sectionhead label,
-.bottom label,
-.modal > label {
-  color: #65dcff;
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 1.4px;
-}
-
-.hero h1 {
-  margin: 16px 0;
-  font-size: clamp(38px, 5vw, 62px);
-  line-height: 1.04;
-  letter-spacing: -2.8px;
-  font-weight: 1000;
-}
-
-.hero h1 em {
-  color: var(--gold);
-  text-shadow: 0 3px 0 #9d6300;
-}
-
-.hero p {
-  max-width: 460px;
-  color: #c3daf8;
-  line-height: 1.75;
-}
-
-.hero .sub {
-  margin-top: 19px;
-  color: #8edfff;
-  font-size: 10px;
-}
-
-.art {
-  position: relative;
-  min-height: 290px;
-  display: grid;
-  place-items: center;
-  isolation: isolate;
-  background: radial-gradient(ellipse, #148bff35, transparent 65%);
-}
-
-.pet {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 165px;
-  height: 190px;
-  border: 2px solid #8edbff;
-  border-radius: 28px;
-  background: linear-gradient(145deg, #1c70be, #102e63 80%);
-  box-shadow: 0 18px 35px #00102b85, inset 0 2px 0 #ffffff45;
-  font-size: 88px;
-}
-
-.pet small,
-.pet b {
-  display: none;
-}
-
-.pet.back {
-  left: 10%;
-  top: 32px;
-  transform: rotate(-10deg) scale(.82);
-  opacity: .9;
-}
-
-.pet.front {
-  right: 12%;
-  top: 36px;
-  z-index: 2;
-  border-color: #b7edff;
-  background: linear-gradient(145deg, #438fff, #164a99);
-  transform: rotate(4deg);
-}
-
-.gem {
-  position: absolute;
-  bottom: 10px;
-  left: 7%;
-  z-index: 3;
-  padding: 11px 15px;
-  border: 1px solid #68d9ff;
-  border-radius: 14px;
-  background: linear-gradient(145deg, #0756a9, #082a59);
-  color: #dffaff;
-  font-weight: 900;
-  box-shadow: var(--shadow);
-}
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  margin: 18px 0 48px;
-  padding: 22px 12px;
-  border: 1px solid #218aff8a;
-  border-radius: 18px;
-  background: linear-gradient(115deg, #0d2e5b, #092044);
-  box-shadow: var(--shadow);
-}
-
-.stats div {
-  text-align: center;
-  border-right: 1px solid #ffffff20;
-}
-
-.stats div:last-child {
-  border: 0;
-}
-
-.stats b,
-.stats small {
-  display: block;
-}
-
-.stats b {
-  color: white;
-  font-size: 23px;
-  font-weight: 1000;
-}
-
-.stats small {
-  margin-top: 3px;
-  color: #9dc9f8;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: .6px;
-}
-
-.sectionhead {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.sectionhead h2,
-.bottom h2 {
-  margin: 5px 0 0;
-  font-size: 29px;
-  line-height: 1.2;
-  font-weight: 1000;
-  letter-spacing: -.7px;
-}
-
-.sectionhead h2 em {
-  color: var(--cyan);
-}
-
-.sectionhead > small {
-  padding: 6px 10px;
-  border: 1px solid #258cff;
-  border-radius: 20px;
-  background: #0a3971;
-  color: #a9e8ff;
-  font-size: 9px;
-  font-weight: 900;
-  white-space: nowrap;
-}
-
-.games {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 48px;
-}
-
-.games article,
-.bottom article {
-  min-width: 0;
-  padding: 17px;
-  overflow: hidden;
-  border: 1px solid #227de6;
-  border-radius: 17px;
-  background: linear-gradient(155deg, #103463, #081b39 80%);
-  box-shadow: 0 7px 18px #00102b45, inset 0 1px 0 #ffffff12;
-}
-
-.games article {
-  position: relative;
-  transition: transform .18s ease, border-color .18s ease;
-}
-
-.games article:hover {
-  transform: translateY(-3px);
-  border-color: #43caff;
-}
-
-.emoji {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 90px;
-  border: 1px solid #318cff8a;
-  border-radius: 13px;
-  background:
-    radial-gradient(circle at 50% 35%, #258fff77, transparent 60%),
-    linear-gradient(135deg, #0a4b9e, #071a3b);
-  font-size: 43px;
-  text-shadow: 0 5px 15px #00102b;
-}
-
-.games h3 {
-  margin: 14px 0 5px;
-  color: #fff;
-  font-size: 17px;
-  font-weight: 950;
-}
-
-.games h3 small,
-.bottom h2 small {
-  padding: 3px 6px;
-  border-radius: 6px;
-  background: #144c88;
-  color: #9ceaff;
-  font-size: 8px;
-  vertical-align: middle;
-}
-
-.games p {
-  min-height: 43px;
-  margin: 0;
-  color: #b7d1ef;
-  font-size: 11px;
-  line-height: 1.6;
-}
-
-.games article > button {
-  width: 100%;
-  margin-top: 12px;
-}
-
-.dots {
-  display: flex;
-  gap: 8px;
-  margin: 14px 0;
-}
-
-.dots i {
-  width: 19px;
-  height: 19px;
-  flex: 0 0 19px;
-  border: 2px solid #ffffff70;
-  border-radius: 50%;
-  box-shadow: 0 2px 6px #0005;
-}
-
-.red { background: #ff4058; }
-.blue { background: #169bff; }
-.green { background: #00df85; }
-.yellow { background: #ffdc29; }
-.purple { background: #a14dff; }
-.orange { background: #ff923c; }
-
-.visual {
-  min-height: 52px;
-  display: grid;
-  place-items: center;
-  margin: 12px 0;
-  color: #b9e9ff;
-  font-size: 27px;
-  font-weight: 950;
-}
-
-.greenText {
-  color: #39ffc1;
-  text-shadow: 0 0 16px #00dba077;
-}
-
-.tiles {
-  margin: 12px 0;
-  color: #9be5ff;
-  font-size: 21px;
-  letter-spacing: 2px;
-}
-
-.bottom {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  margin-bottom: 42px;
-}
-
-.bottom h2 {
-  margin-bottom: 15px;
-  font-size: 22px;
-}
-
-.bottom h2 small {
-  margin-left: 5px;
-}
-
-.leaderhead {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  padding: 9px 5px;
-  border-bottom: 1px solid #ffffff18;
-  color: #8fcaff;
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: .7px;
-}
-
-.leaderrow {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 9px;
-  padding: 11px 5px;
-  border-bottom: 1px solid #ffffff10;
-  font-size: 11px;
-}
-
-.rank {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 8px;
-  background: #14447d;
-  color: #c9f0ff;
-  font-weight: 950;
-}
-
-.pts {
-  color: var(--gold);
-  font-size: 11px;
-  font-weight: 900;
-  white-space: nowrap;
-}
-
-.empty {
-  padding: 25px 0;
-  color: #a9c5e9;
-  font-size: 12px;
-  text-align: center;
-}
-
-.link {
-  padding: 8px 0;
-  border: 0;
-  background: none;
-  box-shadow: none;
-  color: #7cddff;
-}
-
-.messages {
-  height: 220px;
-  margin: 12px 0;
-  padding: 10px;
-  overflow: auto;
-  border: 1px solid #1b5896;
-  border-radius: 11px;
-  background: #06172f;
-}
-
-.message {
-  padding: 8px 4px;
-  border-bottom: 1px solid #ffffff0c;
-  overflow-wrap: anywhere;
-  font-size: 11px;
-}
-
-.message b {
-  margin-right: 7px;
-  color: #7bdcff;
-}
-
-.message time {
-  float: right;
-  color: #7c9fc7;
-  font-size: 9px;
-}
-
-#chatForm {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-input {
-  min-width: 0;
-  padding: 12px;
-  border: 1px solid #24548b;
-  border-radius: 10px;
-  outline: none;
-  background: #06172f;
-  color: white;
-  font: inherit;
-}
-
-input:focus {
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 3px #17d5ff18;
-}
-
-#chatForm input {
-  flex: 1;
-}
-
-.bottom article > small {
-  color: #9bb7d9;
-  font-size: 9px;
-}
-
-footer {
-  padding: 22px 0 30px;
-  border-top: 1px solid #1d528c;
-  color: #9bb7d9;
-  font-size: 10px;
-  line-height: 2;
-  text-align: center;
-}
-
-.backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: grid;
-  place-items: center;
-  padding: 18px;
-  background: #020b19d9;
-  backdrop-filter: blur(10px);
-}
-
-.hidden {
-  display: none !important;
-}
-
-.modal {
-  position: relative;
-  width: min(440px, 100%);
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 28px;
-  border: 1px solid #258bdf;
-  border-radius: 21px;
-  background: linear-gradient(145deg, #103361, #06172f);
-  box-shadow: 0 25px 100px #000b;
-}
-
-.modal h2 {
-  margin: 8px 0;
-  font-size: 25px;
-  line-height: 1.2;
-}
-
-.modal p {
-  color: #b7d1ef;
-  font-size: 12px;
-}
-
-.close {
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  padding: 2px 8px;
-  border: 0;
-  background: none;
-  box-shadow: none;
-  color: #c8e3ff;
-  font-size: 26px;
-}
-
-.modal form > label:not(.check) {
-  display: block;
-  margin: 16px 0 6px;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.modal input:not([type=checkbox]),
-#verify input {
-  width: 100%;
-}
-
-.check {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 16px;
-  color: #c8dcf5;
-  font-size: 11px;
-}
-
-.check input {
-  margin-top: 3px;
-  accent-color: var(--blue);
-}
-
-.fine {
-  display: block;
-  margin-top: 12px;
-  color: #9bb7d9;
-  font-size: 9px;
-  line-height: 1.6;
-}
-
-.wide {
-  width: 100%;
-  margin-top: 14px;
-}
-
-.code {
-  margin: 12px 0;
-  padding: 14px;
-  border: 1px dashed #39baff;
-  border-radius: 11px;
-  background: #087cff20;
-  color: #b9f2ff;
-  font-size: 21px;
-  font-weight: 950;
-  letter-spacing: 3px;
-  text-align: center;
-}
-
-.error {
-  min-height: 15px;
-  color: #ff8798 !important;
-}
-
-.pick-colors {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin: 16px 0;
-}
-
-.pick-color {
-  min-height: 45px;
-  border: 2px solid #ffffff32;
-  border-radius: 12px;
-  box-shadow: inset 0 1px 0 #ffffff45, 0 3px 0 #00102b55;
-}
-
-.pick-color.selected {
-  outline: 3px solid white;
-  outline-offset: 2px;
-}
-
-.result {
-  margin-top: 14px;
-  padding: 17px;
-  border: 1px solid #237bca;
-  border-radius: 13px;
-  background: #061a35;
-  text-align: center;
-}
-
-.result strong {
-  display: block;
-  font-size: 29px;
-}
-
-.result p {
-  margin-bottom: 0;
-  font-size: 11px;
-}
-
-.side-choice {
-  display: flex;
-  gap: 10px;
-  margin: 15px 0;
-}
-
-.side-choice button {
-  flex: 1;
-  border: 1px solid #286db1;
-  background: #0a2850;
-  box-shadow: none;
-}
-
-.side-choice .selected {
-  border-color: var(--cyan);
-  background: #087cff55;
-}
-
-.toast {
-  position: fixed;
-  bottom: 22px;
-  left: 50%;
-  z-index: 30;
-  max-width: calc(100vw - 30px);
-  padding: 12px 17px;
-  border: 1px solid #2995ed;
-  border-radius: 12px;
-  background: #092b54;
-  color: white;
-  font-size: 12px;
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, 15px);
-  transition: .2s;
-}
-
-.toast.show {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-
-@media (max-width: 950px) {
-  header {
-    padding-right: 18px;
-    padding-left: 18px;
-  }
-
-  nav {
-    gap: 14px;
-  }
-
-  .games {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .hero {
-    gap: 10px;
-    padding: 28px 16px;
-  }
-}
-
-@media (max-width: 650px) {
-  header {
-    min-height: 66px;
-    padding: 10px 14px;
-  }
-
-  .brand {
-    font-size: 23px;
-  }
-
-  .brand small {
-    font-size: 8px;
-  }
-
-  nav {
-    display: none;
-  }
-
-  header > button {
-    padding: 10px 11px;
-    font-size: 11px;
-  }
-
-  main {
-    padding: 0 12px;
-  }
-
-  .hero {
-    grid-template-columns: 1fr;
-    gap: 5px;
-    padding: 25px 16px 12px;
-    margin-top: 12px;
-    border-radius: 18px;
-  }
-
-  .hero h1 {
-    font-size: clamp(38px, 11vw, 50px);
-    letter-spacing: -2px;
-  }
-
-  .hero p {
-    font-size: 13px;
-  }
-
-  .hero .btn,
-  .hero button {
-    margin-bottom: 6px;
-  }
-
-  .hero .sub {
-    font-size: 9px;
-  }
-
-  .art {
-    min-height: 235px;
-  }
-
-  .pet {
-    width: 125px;
-    height: 150px;
-    border-radius: 22px;
-    font-size: 69px;
-  }
-
-  .pet.back {
-    left: 13%;
-    top: 22px;
-  }
-
-  .pet.front {
-    right: 13%;
-    top: 27px;
-  }
-
-  .gem {
-    bottom: 0;
-    left: 5%;
-    font-size: 12px;
-  }
-
-  .stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 17px 4px;
-    margin: 12px 0 35px;
-    padding: 17px 6px;
-  }
-
-  .stats div {
-    border: 0;
-  }
-
-  .stats div:nth-child(odd) {
-    border-right: 1px solid #ffffff20;
-  }
-
-  .stats b {
-    font-size: 20px;
-  }
-
-  .stats small {
-    font-size: 8px;
-  }
-
-  .sectionhead {
-    align-items: center;
-  }
-
-  .sectionhead h2 {
-    font-size: 24px;
-  }
-
-  .sectionhead > small {
-    font-size: 8px;
-  }
-
-  .games {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 9px;
-    margin-bottom: 35px;
-  }
-
-  .games article {
-    padding: 10px;
-    border-radius: 13px;
-  }
-
-  .emoji {
-    height: 68px;
-    font-size: 34px;
-  }
-
-  .games h3 {
-    margin-top: 11px;
-    font-size: 15px;
-  }
-
-  .games p {
-    min-height: 55px;
-    font-size: 10px;
-  }
-
-  .games article > button {
-    min-height: 42px;
-    padding: 9px 5px;
-    font-size: 10px;
-  }
-
-  .dots {
-    gap: 5px;
-  }
-
-  .dots i {
-    width: 15px;
-    height: 15px;
-    flex-basis: 15px;
-  }
-
-  .visual {
-    font-size: 21px;
-  }
-
-  .tiles {
-    font-size: 14px;
-    letter-spacing: 0;
-  }
-
-  .bottom {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
-  }
-
-  .bottom article {
-    padding: 14px;
-  }
-
-  .bottom h2 {
-    font-size: 21px;
-  }
-
-  .leaderrow {
-    gap: 6px;
-    font-size: 10px;
-  }
-
-  .pts {
-    font-size: 10px;
-  }
-
-  .messages {
-    height: 200px;
-  }
-
-  footer {
-    padding: 18px 4px 25px;
-    font-size: 9px;
-  }
-
-  .modal {
-    padding: 23px 18px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    transition: none !important;
-  }
-}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PetVerse — PS99 Community</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="site-bg"></div>
+
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand-wrap" aria-label="PetVerse home">
+          <div class="brand-mark">🐾</div>
+          <div class="brand-text">
+            <span class="brand-title">Pet<span>Verse</span></span>
+            <small>PS99 COMMUNITY</small>
+          </div>
+        </div>
+
+        <nav class="main-nav" aria-label="Main navigation">
+          <a href="#hero">Games</a>
+          <a href="#leaderboard">Leaderboard</a>
+          <a href="#community">Community</a>
+        </nav>
+
+        <button id="openRegister" class="primary-btn" type="button">Create account</button>
+      </header>
+
+      <main class="page-main">
+        <section class="hero-shell" id="hero">
+          <div class="hero-copy">
+            <div class="eyebrow">THE PET SIMULATOR 99 COMMUNITY</div>
+            <h1>
+              Play together.<br />
+              Climb the ranks.
+            </h1>
+            <p>
+              Challenge friends, test your luck with demo points,<br />
+              and rise through the community leaderboard.
+            </p>
+
+            <div class="hero-actions">
+              <button class="primary-btn accent" type="button">Explore games →</button>
+              <button id="openRegisterSecondary" class="primary-btn alt" type="button">Create account</button>
+            </div>
+
+            <div class="hero-meta">
+              <span>🛡️ Server-processed demo games</span>
+              <span>💎 Virtual points only</span>
+            </div>
+          </div>
+
+          <div class="hero-art" aria-hidden="true">
+            <div class="mini-shape crystal-one"></div>
+            <div class="mini-shape crystal-two"></div>
+            <div class="mini-shape crystal-three"></div>
+            <div class="mini-shape crystal-four"></div>
+
+            <div class="pet-scene">
+              <div class="mini-pet pet-left">🐱</div>
+              <div class="mini-pet pet-mid">🐾</div>
+              <div class="mini-pet pet-right">🐶</div>
+            </div>
+
+            <div class="big-cat-box">🐱</div>
+            <div class="ps99-badge">PS99</div>
+          </div>
+        </section>
+
+        <section class="stats-bar" aria-label="Community stats">
+          <div class="stat-box">
+            <div class="stat-icon">👥</div>
+            <div class="stat-number">0</div>
+            <div class="stat-label">COMMUNITY ACCOUNTS</div>
+          </div>
+
+          <div class="stat-box">
+            <div class="stat-icon">🎮</div>
+            <div class="stat-number">4</div>
+            <div class="stat-label">GAME MODES</div>
+          </div>
+
+          <div class="stat-box">
+            <div class="stat-icon">💎</div>
+            <div class="stat-number">1,000</div>
+            <div class="stat-label">STARTING DEMO POINTS</div>
+          </div>
+
+          <div class="stat-box">
+            <div class="stat-icon">◔</div>
+            <div class="stat-number">24/7</div>
+            <div class="stat-label">COMMUNITY</div>
+          </div>
+        </section>
+
+        <section class="games-panel">
+          <div class="section-header">
+            <div class="section-title">
+              <span class="spark">📌</span>
+              <h2>Featured games</h2>
+            </div>
+            <span class="demo-pill">DEMO POINTS ONLY</span>
+          </div>
+
+          <div class="games-grid">
+            <article class="game-card card-blue" data-game="dice">
+              <div class="game-emoji">🎲</div>
+              <h3>Color Dice</h3>
+              <p>Choose two colors out of six. Will one match the roll?</p>
+              <button class="card-btn" type="button" data-game="dice">Play Color Dice →</button>
+            </article>
+
+            <article class="game-card card-purple" data-game="coinflip">
+              <div class="game-emoji">🪙</div>
+              <h3>Coinflip</h3>
+              <p>Pick heads or tails and see where the coin lands.</p>
+              <button class="card-btn" type="button" data-game="coinflip">Play Coinflip →</button>
+            </article>
+
+            <article class="game-card card-gold">
+              <div class="game-emoji big-emoji">🚀</div>
+              <h3>Crash <small>Preview</small></h3>
+              <p>Watch the multiplier climb in this UI preview.</p>
+              <div class="multiplier">1.00x</div>
+              <button class="card-btn" type="button">Open Crash →</button>
+            </article>
+
+            <article class="game-card card-emerald">
+              <div class="game-emoji grid-emoji">❔</div>
+              <h3>Mines</h3>
+              <p>Explore a grid and risk it in this non-wagering preview.</p>
+              <button class="card-btn" type="button">Open Mines →</button>
+            </article>
+          </div>
+        </section>
+
+        <section class="bottom-panel" id="community">
+          <div class="leaderboard-panel" id="leaderboard">
+            <div class="subhead-row">
+              <span class="head-icon">🏆</span>
+              <h3>Leaderboard</h3>
+              <span class="demo-badge">DEMO</span>
+            </div>
+
+            <div class="leaderboard-head">
+              <span>PLAYER</span>
+              <span>POINTS</span>
+              <span>VERIFIED</span>
+            </div>
+
+            <div id="leaders" class="leaderboard-list">
+              <div class="leader-row">
+                <span class="rank rank-1">1</span>
+                <span>HugeCatFan</span>
+                <span>12,450</span>
+                <span>✅</span>
+              </div>
+              <div class="leader-row">
+                <span class="rank rank-2">2</span>
+                <span>PixelPet</span>
+                <span>10,230</span>
+                <span>✅</span>
+              </div>
+              <div class="leader-row">
+                <span class="rank rank-3">3</span>
+                <span>MasterLuck</span>
+                <span>8,760</span>
+                <span>✅</span>
+              </div>
+              <div class="leader-row">
+                <span class="rank rank-4">4</span>
+                <span>DinoRex</span>
+                <span>6,540</span>
+                <span>✅</span>
+              </div>
+              <div class="leader-row">
+                <span class="rank rank-5">5</span>
+                <span>RainbowNoob</span>
+                <span>5,320</span>
+                <span>✅</span>
+              </div>
+            </div>
+
+            <button id="refreshLeaderboard" class="ghost-btn" type="button">Refresh leaderboard ↻</button>
+          </div>
+
+          <div class="chat-panel">
+            <div class="subhead-row chat-head">
+              <span class="head-icon">💬</span>
+              <h3>Community chat</h3>
+              <span class="online-dot">●</span>
+            </div>
+
+            <div id="messages" class="chat-box" aria-live="polite">
+              <div class="chat-msg">
+                <strong>HugeCatFan</strong>
+                <span>Welcome to PetVerse!</span>
+                <time>10:24</time>
+              </div>
+              <div class="chat-msg">
+                <strong>PixelPet</strong>
+                <span>This is so cool!</span>
+                <time>10:25</time>
+              </div>
+              <div class="chat-msg">
+                <strong>RainbowNoob</strong>
+                <span>Anyone want to try the dice game?</span>
+                <time>10:26</time>
+              </div>
+            </div>
+
+            <div class="chat-input-row">
+              <input id="chatInput" type="text" placeholder="Write a message..." autocomplete="off" />
+              <button id="sendChat" class="send-btn" type="button">➤</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="backdrop" class="backdrop hidden" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <button id="modalClose" class="close-btn" type="button" aria-label="Close">×</button>
+
+        <div class="modal-header">
+          <div class="eyebrow modal-eyebrow">ACCOUNT</div>
+          <h3 id="modalTitle">Create account</h3>
+        </div>
+
+        <p id="modalDesc">Enter a demo username and confirm the rules.</p>
+
+        <div id="register" class="form-block">
+          <label for="username">Roblox username</label>
+          <input id="username" type="text" placeholder="Enter username" />
+
+          <label class="checkbox-row">
+            <input id="age" type="checkbox" />
+            <span>I confirm I am old enough for this demo.</span>
+          </label>
+
+          <div id="error" class="error-text" aria-live="polite"></div>
+          <button id="registerBtn" class="primary-btn wide-btn" type="button">Create account</button>
+        </div>
+
+        <div id="verify" class="form-block hidden">
+          <label for="codeInput">Verification code</label>
+          <input id="codeInput" type="text" placeholder="Enter the code shown" />
+          <div id="codeBox" class="code-box">PV-XXXX</div>
+          <div id="verifyError" class="error-text" aria-live="polite"></div>
+          <button id="verifyBtn" class="primary-btn wide-btn" type="button">Verify</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" aria-live="polite"></div>
+
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
