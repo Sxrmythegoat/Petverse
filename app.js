@@ -1,5 +1,318 @@
-const $=s=>document.querySelector(s);let user=JSON.parse(sessionStorage.getItem('pvUser')||'null'),socket=null;const modal=$('#backdrop');const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function toast(s){$('#toast').textContent=s;$('#toast').classList.add('show');setTimeout(()=>$('#toast').classList.remove('show'),2500)}function save(u){user=u;sessionStorage.setItem('pvUser',JSON.stringify(u));$('#account').textContent=u.username;$('#heroAccount').textContent=u.verified?`${u.points.toLocaleString()} demo pts`:'Finish verification';$('#chatInput').disabled=!u.verified}async function api(url,options={}){const headers={'Content-Type':'application/json',...(options.headers||{})};if(user?.id)headers['x-demo-user']=user.id;const r=await fetch(url,{...options,headers}),d=await r.json();if(!r.ok)throw Error(d.error||'Request failed');return d}function open(){modal.classList.remove('hidden')}function close(){modal.classList.add('hidden')}$('#account').onclick=$('#heroAccount').onclick=open;$('#close').onclick=close;modal.onclick=e=>{if(e.target===modal)close()};$('#register').onsubmit=async e=>{e.preventDefault();$('#error').textContent='';try{const d=await api('/api/register',{method:'POST',body:JSON.stringify({username:$('#username').value,ageConfirmed:$('#age').checked})});save(d.user);$('#code').textContent=d.code;$('#verify').classList.remove('hidden');$('#register').classList.add('hidden');$('#modalDesc').textContent='Demo account created. Complete local demo verification.';$('#error').textContent=d.note;await leaderboard()}catch(e){$('#error').textContent=e.message}};$('#verifyButton').onclick=async()=>{try{const d=await api('/api/verify-demo',{method:'POST',body:JSON.stringify({code:$('#codeInput').value})});save(d.user);$('#error').textContent=d.note;$('#error').style.color='#71e5ba';connect();leaderboard()}catch(e){$('#error').textContent=e.message}};
-async function leaderboard(){try{const d=await api('/api/leaderboard');$('#count').textContent=d.leaderboard.length;$('#leaders').innerHTML=d.leaderboard.length?d.leaderboard.map((p,i)=>`<div class="leaderrow"><span class="rank">${i+1}</span><b>${esc(p.username)} ${p.verified?'✓':''}</b><span class="pts">${Number(p.points).toLocaleString()} pts</span></div>`).join(''):'Create a demo account to appear here.'}catch{}}$('#refresh').onclick=leaderboard;
-function game(title,desc,html){$('#modalTitle').textContent=title;$('#modalDesc').textContent=desc;$('#register').classList.add('hidden');$('#verify').classList.add('hidden');$('#error').textContent='';let old=$('#gamePanel');if(old)old.remove();const el=document.createElement('div');el.id='gamePanel';el.innerHTML=html;$('#error').before(el);open()}function gate(){if(!user){open();return false}if(!user.verified){open();toast('Verify demo account first');return false}return true}
-document.querySelectorAll('[data-game]').forEach(b=>b.onclick=()=>{if(b.dataset.game==='dice'){game('Color Dice','Choose exactly two colors. Fictional demo points only.',`<div class="pick-colors">${['red','blue','green','yellow','purple','orange'].map(c=>`<button class="pick-color ${c}" data-color="${c}" aria-label="${c}"></button>`).join('')}</div><p id="picked">Choose 2 colors.</p><label>Demo points</label><input id="stake" type="number" min="1" max="250" value="25" style="width:100%"><button class="wide" id="play">Roll the dice</button><div id="result"></div>`);document.querySelectorAll('[data-color]').forEach(x=>x.onclick=()=>{x.classList.toggle('selected');let a=[...document.querySelectorAll('[data-color].selected')];if(a.length>2)a[0].classList.remove('selected');$('#picked').textContent=[...document.querySelectorAll('[data-color].selected')].map(y=>y.dataset.color).join(', ')||'Choose 2 colors.'});$('#play').onclick=async()=>{if(!gate())return;try{const d=await api('/api/game/color-dice',{method:'POST',body:JSON.stringify({colors:[...document.querySelectorAll('[data-color].selected')].map(x=>x.dataset.color),stake:Number($('#stake').value)})});save(d.user);$('#result').innerHTML=`<div class="result"><small>SERVER ROLLED</small><strong>${esc(d.rolled.toUpperCase())}</strong><h3>${d.won?'You won!':'Not this time'}</h3><p>${d.pointsDelta>=0?'+':''}${d.pointsDelta} demo points · Balance ${d.user.points.toLocaleString()}</p></div>`;leaderboard()}catch(e){$('#result').textContent=e.message}}}else if(b.dataset.game==='coin'){game('Coinflip','Pick a side. Demo points only.',`<div class="side-choice"><button class="selected" data-side="heads">🪙 Heads</button><button data-side="tails">🌙 Tails</button></div><label>Demo points</label><input id="stake" type="number" min="1" max="250" value="25" style="width:100%"><button class="wide" id="play">Flip coin</button><div id="result"></div>`);document.querySelectorAll('[data-side]').forEach(x=>x.onclick=()=>{document.querySelectorAll('[data-side]').forEach(y=>y.classList.remove('selected'));x.classList.add('selected')});$('#play').onclick=async()=>{if(!gate())return;try{const d=await api('/api/game/coinflip',{method:'POST',body:JSON.stringify({choice:document.querySelector('[data-side].selected').dataset.side,stake:Number($('#stake').value)})});save(d.user);$('#result').innerHTML=`<div class="result"><small>RESULT</small><strong>${d.result.toUpperCase()}</strong><h3>${d.won?'You won!':'Not this time'}</h3><p>${d.pointsDelta>=0?'+':''}${d.pointsDelta} demo points · Balance ${d.user.points.toLocaleString()}</p></div>`;leaderboard()}catch(e){$('#result').textContent=e.message}}}else{game(b.dataset.game==='crash'?'Crash — Preview':'Mines — Preview','UI preview only. No stake or reward is processed.',b.dataset.game==='crash'?'<div class="result"><strong>1.00x</strong><p>Crash simulation is not enabled in this starter.</p></div>':`<div class="pick-colors">${Array.from({length:25},(_,i)=>`<button data-tile="${i}" class="pick-color">?</button>`).join('')}</div><p>Preview only — tiles do not generate rewards.</p>`);document.querySelectorAll('[data-tile]').forEach(x=>x.onclick=()=>{x.textContent=['💎','✨','🐾'][Number(x.dataset.tile)%3];x.disabled=true})}});
-function connect(){if(!user?.verified||socket)return;socket=io();socket.on('chat:history',a=>{$('#messages').innerHTML='';a.forEach(addMessage)});socket.on('chat:message',addMessage)}function addMessage(m){const d=document.createElement('div');d.className='message';d.innerHTML=`<b>${esc(m.username)}</b>${esc(m.message)}<time>${new Date(m.at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</time>`;$('#messages').append(d);$('#messages').scrollTop=$('#messages').scrollHeight}$('#chatForm').onsubmit=async e=>{e.preventDefault();if(!gate())return;const message=$('#chatInput').value.trim();if(!message)return;try{await api('/api/chat',{method:'POST',body:JSON.stringify({message})});$('#chatInput').value=''}catch(e){toast(e.message)}};$('#chatInput').disabled=true;leaderboard();if(user?.id)api('/api/me').then(d=>{save(d.user);if(d.user.verified)connect()}).catch(()=>{sessionStorage.removeItem('pvUser');user=null});
+const $ = (selector) => document.querySelector(selector);
+const $all = (selector) => Array.from(document.querySelectorAll(selector));
+
+function safeJSONParse(value) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function safeSessionUser() {
+  const raw = sessionStorage.getItem('pvUser');
+  return raw ? safeJSONParse(raw) : null;
+}
+
+let user = safeSessionUser();
+let socket = null;
+
+function showToast(msg) {
+  const toast = $('#toast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2400);
+}
+
+function openModal() {
+  const modal = $('#backdrop');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeModal() {
+  const modal = $('#backdrop');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+function saveUser(nextUser) {
+  user = nextUser;
+  try {
+    sessionStorage.setItem('pvUser', JSON.stringify(user));
+  } catch {
+    // ignore storage problems in demo mode
+  }
+  updateUserUI();
+}
+
+function updateUserUI() {
+  if (!user) {
+    $('#heroAccount')?.setAttribute('data-label', 'Create account');
+    return;
+  }
+  $('#heroAccount')?.setAttribute('data-label', user.username || 'Demo user');
+}
+
+function escapeHtml(input) {
+  return String(input ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+async function api(url, options = {}) {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {})
+  };
+
+  if (user?.id) {
+    headers['x-demo-user'] = user.id;
+  }
+
+  const res = await fetch(url, {
+    ...options,
+    headers,
+    cache: 'no-store'
+  });
+
+  const raw = await res.text().catch(() => '');
+  let data = {};
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    data = { error: 'Invalid server response.' };
+  }
+
+  if (!res.ok) {
+    throw new Error(data.error || res.statusText || 'Request failed');
+  }
+
+  return data;
+}
+
+async function refreshLeaderboard() {
+  try {
+    const result = await api('/api/leaderboard');
+    const list = result.leaderboard || [];
+    const container = $('#leaders');
+    if (!container) return;
+
+    if (!list.length) {
+      container.innerHTML = '<div class="leader-row empty"><span>Awaiting first player</span></div>';
+      return;
+    }
+
+    container.innerHTML = list.map((entry, index) => `
+      <div class="leader-row">
+        <span class="rank rank-${index + 1}">${index + 1}</span>
+        <span>${escapeHtml(entry.username)}</span>
+        <span>${Number(entry.points || 0).toLocaleString()}</span>
+        <span>${entry.verified ? '✅' : '–'}</span>
+      </div>
+    `).join('');
+  } catch (error) {
+    console.error('Leaderboard error:', error);
+    const container = $('#leaders');
+    if (container) {
+      container.innerHTML = '<div class="leader-row empty"><span>Leaderboard unavailable</span></div>';
+    }
+  }
+}
+
+async function createAccount(username, ageConfirmed) {
+  try {
+    const result = await api('/api/register', {
+      method: 'POST',
+      body: JSON.stringify({ username, ageConfirmed })
+    });
+
+    if (result?.user) {
+      saveUser(result.user);
+      $('#codeBox').textContent = result.code || 'PV-XXXX';
+      $('#register').classList.add('hidden');
+      $('#verify').classList.remove('hidden');
+      $('#error').textContent = '';
+      showToast('Account created. Verify to continue.');
+    }
+  } catch (error) {
+    $('#error').textContent = error.message;
+  }
+}
+
+async function verifyDemoCode(code) {
+  try {
+    const result = await api('/api/verify-demo', {
+      method: 'POST',
+      body: JSON.stringify({ code })
+    });
+
+    if (result?.user) {
+      saveUser(result.user);
+      $('#verifyError').textContent = '';
+      $('#verify').classList.add('hidden');
+      closeModal();
+      connectSocket();
+      showToast('Verification complete');
+    }
+  } catch (error) {
+    $('#verifyError').textContent = error.message;
+  }
+}
+
+function addMessage(entry) {
+  const box = $('#messages');
+  if (!box) return;
+
+  const row = document.createElement('div');
+  row.className = 'chat-msg';
+  row.innerHTML = `
+    <strong>${escapeHtml(entry.username || 'User')}</strong>
+    <span>${escapeHtml(entry.message || '')}</span>
+    <time>${new Date(entry.at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>
+  `;
+
+  box.appendChild(row);
+  box.scrollTop = box.scrollHeight;
+}
+
+function connectSocket() {
+  if (!user?.verified || socket) return;
+  if (typeof io !== 'function') return;
+
+  socket = io();
+  socket.on('chat:history', (history = []) => {
+    const box = $('#messages');
+    if (!box) return;
+    box.innerHTML = '';
+    history.forEach(addMessage);
+  });
+
+  socket.on('chat:message', (entry) => {
+    addMessage(entry);
+  });
+}
+
+async function sendChat() {
+  const input = $('#chatInput');
+  if (!input) return;
+
+  const message = input.value.trim();
+  if (!message) return;
+
+  try {
+    await api('/api/chat', {
+      method: 'POST',
+      body: JSON.stringify({ message })
+    });
+    input.value = '';
+  } catch (error) {
+    showToast(error.message || 'Chat failed');
+  }
+}
+
+async function playGame(kind) {
+  if (!user) {
+    openModal();
+    showToast('Create an account first');
+    return;
+  }
+
+  try {
+    const result = await api(`/api/game/${kind}`, {
+      method: 'POST',
+      body: JSON.stringify({})
+    });
+
+    showToast(result.message || 'Round complete');
+    await refreshLeaderboard();
+  } catch (error) {
+    showToast(error.message || 'Game failed');
+  }
+}
+
+function bindEvents() {
+  $('#openRegister')?.addEventListener('click', () => {
+    $('#register').classList.remove('hidden');
+    $('#verify').classList.add('hidden');
+    $('#error').textContent = '';
+    $('#verifyError').textContent = '';
+    openModal();
+  });
+
+  $('#openRegisterSecondary')?.addEventListener('click', () => {
+    $('#openRegister').click();
+  });
+
+  $('#modalClose')?.addEventListener('click', closeModal);
+
+  $('#registerBtn')?.addEventListener('click', () => {
+    const username = $('#username')?.value.trim();
+    const ageConfirmed = !!$('#age')?.checked;
+
+    if (!username) {
+      $('#error').textContent = 'Please enter a username.';
+      return;
+    }
+
+    if (!ageConfirmed) {
+      $('#error').textContent = 'Please confirm the demo rules.';
+      return;
+    }
+
+    createAccount(username, ageConfirmed);
+  });
+
+  $('#verifyBtn')?.addEventListener('click', () => {
+    const code = $('#codeInput')?.value.trim();
+    if (!code) {
+      $('#verifyError').textContent = 'Enter the verification code.';
+      return;
+    }
+    verifyDemoCode(code);
+  });
+
+  $('#sendChat')?.addEventListener('click', sendChat);
+
+  $('#chatInput')?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      sendChat();
+    }
+  });
+
+  $('#refreshLeaderboard')?.addEventListener('click', refreshLeaderboard);
+
+  $all('[data-game]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const kind = button.dataset.game;
+      if (!kind) return;
+      if (kind === 'dice') playGame('color-dice');
+      if (kind === 'coinflip') playGame('coinflip');
+    });
+  });
+}
+
+async function boot() {
+  bindEvents();
+  updateUserUI();
+  await refreshLeaderboard();
+
+  if (user?.verified) {
+    connectSocket();
+  }
+
+  try {
+    const me = await api('/api/me');
+    if (me?.user) saveUser(me.user);
+  } catch {
+    // ignore when no session exists
+  }
+}
+
+boot();
