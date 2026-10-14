@@ -14,9 +14,10 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const db = new Database(path.join(root, 'data.sqlite'));
-const port = process.env.PORT || 3000;
+const port = Number(process.env.PORT) || 3000;
 
 db.pragma('journal_mode = WAL');
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
@@ -27,6 +28,7 @@ db.exec(`
     points INTEGER NOT NULL DEFAULT 1000,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
+
   CREATE TABLE IF NOT EXISTS activity (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id TEXT NOT NULL,
@@ -37,145 +39,209 @@ db.exec(`
   );
 `);
 
+app.disable('x-powered-by');
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '20kb' }));
-app.use(rateLimit({ windowMs: 60000, limit: 120 }));
+app.use(rateLimit({ windowMs: 60_000, limit: 120 }));
+
+// Serve index.html, app.js and style.css from the repository root.
 app.use(express.static(root));
 
-const usernameClean = s =>
-  String(s || '').trim().replace(/^@/, '').toLowerCase();
-
-const user = id =>
-  db.prepare(
-    'SELECT id, username, age_confirmed, verified, points FROM users WHERE id = ?'
-  ).get(id);
-
-const log = (id, kind, detail, delta = 0) =>
-  db.prepare(
-    'INSERT INTO activity(user_id, kind, detail, delta) VALUES (?, ?, ?, ?)'
-  ).run(id, kind, String(detail).slice(0, 180), delta);
-
-function auth(req, res, next) {
-  const u = user(String(req.header('x-demo-user') || ''));
-  if (!u) {
-    return res.status(401).json({ error: 'Create a demo account first.' });
-  }
-  req.user = u;
-  next();
-}
-
-app.get('/api/health', (_, res) => {
-  res.json({ ok: true, mode: 'demo-only' });
+app.get('/', (req, res) => {
+  res.sendFile(path.join(root, 'index.html'));
 });
 
-app.post('/api/register', (req, res) => {
-  const username = usernameClean(req.body.username);
+const usernameClean = value =>
+  String(value || '').trim().replace(/^@/, '').toLowerCase();
 
-  if (!/^[a-z0-9_]{3,20}$/.test(username)) {
-    return res.status(400).json({
-      error: 'Use a username with 3–20 letters, numbers or underscores.'
+const getUser = id =>
+  db.prepare(`
+    SELECT id, username, age_confirmed, verified, points
+    FROM users WHERE id = ?
+  `).get(id);
+
+const logActivity = (id, kind, detail, delta = 0) =>
+  db.prepare(`
+    INSERT INTO activity (user_id, kind, detail, delta)
+    VALUES (?, ?, ?, ?)
+  `).run(id, kind, String(detail).slice(0, 180), delta);
+
+function auth(req, res, next) {
+  const id = String(req.header('x-demo-user') || '');
+  const currentUser = getUser(id);
+
+  if (!currentUser) {
+    return res.status(401).json({
+      error: 'Create a demo account first.'
     });
   }
 
-  if (req.body.ageConfirmed !== true) {
-    return res.status(400).json({ error: 'Confirm the age notice first.' });
+  req.user = currentUser;
+  next();
+}
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, mode: 'demo-only' });
+});
+
+// Community account registration
+app.post('/api/register', (req, res) => {
+  const username = usernameClean(req.body?.username);
+
+  if (!/^[a-z0-9_]{3,20}$/.test(username)) {
+    return res.status(400).json({
+      error: 'Username must contain 3–20 letters, numbers or underscores.'
+    });
   }
 
-  if (db.prepare('SELECT id FROM users WHERE username = ?').get(username)) {
+  if (req.body?.ageConfirmed !== true) {
+    return res.status(400).json({
+      error: 'Please confirm the demo rules first.'
+    });
+  }
+
+  const existing = db.prepare(
+    'SELECT id FROM users WHERE username = ?'
+  ).get(username);
+
+  if (existing) {
     return res.status(409).json({
       error: 'That username already has a demo account.'
     });
   }
 
   const id = crypto.randomUUID();
-  const code = 'PV-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+  const code = 'PV-' +
+    crypto.randomBytes(3).toString('hex').toUpperCase();
 
-  db.prepare(
-    'INSERT INTO users(id, username, age_confirmed, code) VALUES (?, ?, 1, ?)'
-  ).run(id, username, code);
+  db.prepare(`
+    INSERT INTO users (id, username, age_confirmed, code)
+    VALUES (?, ?, 1, ?)
+  `).run(id, username, code);
 
-  log(id, 'account', 'Demo account created');
+  logActivity(id, 'account', 'Demo account created');
 
-  res.json({
-    user: user(id),
+  res.status(201).json({
+    user: getUser(id),
     code,
-    note: 'Demo account only. No Roblox account is connected.'
+    note: 'Demo account only. No Roblox profile is connected.'
   });
 });
 
+// Current account
 app.get('/api/me', auth, (req, res) => {
   res.json({ user: req.user });
 });
 
+// Local demo verification only
 app.post('/api/verify-demo', auth, (req, res) => {
-  const code = db.prepare(
+  const saved = db.prepare(
     'SELECT code FROM users WHERE id = ?'
-  ).get(req.user.id)?.code;
+  ).get(req.user.id);
 
-  if (String(req.body.code || '').trim().toUpperCase() !== code) {
-    return res.status(400).json({ error: 'Code does not match.' });
+  if (
+    String(req.body?.code || '').trim().toUpperCase()
+    !== saved?.code
+  ) {
+    return res.status(400).json({
+      error: 'Code does not match.'
+    });
   }
 
-  db.prepare('UPDATE users SET verified = 1 WHERE id = ?')
-    .run(req.user.id);
+  db.prepare(
+    'UPDATE users SET verified = 1 WHERE id = ?'
+  ).run(req.user.id);
 
-  log(req.user.id, 'verification', 'Local demo verification complete');
+  logActivity(
+    req.user.id,
+    'verification',
+    'Local demo verification complete'
+  );
 
   res.json({
-    user: user(req.user.id),
-    note: 'Demo verification only. No Roblox profile was checked.'
+    user: getUser(req.user.id),
+    note: 'Local demo verification only. No Roblox profile was checked.'
   });
 });
 
-app.get('/api/leaderboard', (_, res) => {
-  res.json({
-    leaderboard: db.prepare(
-      'SELECT username, points, verified FROM users ORDER BY points DESC LIMIT 20'
-    ).all()
-  });
+// Leaderboard
+app.get('/api/leaderboard', (req, res) => {
+  const leaderboard = db.prepare(`
+    SELECT username, points, verified
+    FROM users
+    ORDER BY points DESC, username ASC
+    LIMIT 20
+  `).all();
+
+  res.json({ leaderboard });
 });
 
+// Account activity
 app.get('/api/activity', auth, (req, res) => {
-  res.json({
-    activity: db.prepare(
-      'SELECT kind, detail, delta, created_at FROM activity WHERE user_id = ? ORDER BY id DESC LIMIT 30'
-    ).all(req.user.id)
-  });
+  const activity = db.prepare(`
+    SELECT kind, detail, delta, created_at
+    FROM activity
+    WHERE user_id = ?
+    ORDER BY id DESC
+    LIMIT 30
+  `).all(req.user.id);
+
+  res.json({ activity });
 });
 
-// Free practice games: no stakes, losses, or payouts.
+// Free practice game: no stakes or payouts.
 app.post('/api/game/color-dice', auth, (req, res) => {
-  const colors = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+  const colors = [
+    'red', 'blue', 'green',
+    'yellow', 'purple', 'orange'
+  ];
+
   const rolled = colors[crypto.randomInt(colors.length)];
 
-  log(req.user.id, 'game', `Color Dice practice: ${rolled}`);
+  logActivity(
+    req.user.id,
+    'game',
+    `Color Dice practice: ${rolled}`
+  );
 
   res.json({
     rolled,
-    message: 'Practice round complete. Your points were not changed.',
-    user: user(req.user.id)
+    message: 'Practice round complete. Points were not changed.',
+    user: getUser(req.user.id)
   });
 });
 
+// Free practice game: no stakes or payouts.
 app.post('/api/game/coinflip', auth, (req, res) => {
   const result = crypto.randomInt(2) ? 'heads' : 'tails';
 
-  log(req.user.id, 'game', `Coinflip practice: ${result}`);
+  logActivity(
+    req.user.id,
+    'game',
+    `Coinflip practice: ${result}`
+  );
 
   res.json({
     result,
-    message: 'Practice round complete. Your points were not changed.',
-    user: user(req.user.id)
+    message: 'Practice round complete. Points were not changed.',
+    user: getUser(req.user.id)
   });
 });
 
-const chat = [];
+// Community chat
+const chatHistory = [];
+const MAX_CHAT_MESSAGES = 50;
 
 app.post('/api/chat', auth, (req, res) => {
-  const message = String(req.body.message || '').trim().slice(0, 240);
+  const message = String(req.body?.message || '')
+    .trim()
+    .slice(0, 240);
 
   if (!message) {
-    return res.status(400).json({ error: 'Message is empty.' });
+    return res.status(400).json({
+      error: 'Message is empty.'
+    });
   }
 
   const entry = {
@@ -184,15 +250,36 @@ app.post('/api/chat', auth, (req, res) => {
     at: new Date().toISOString()
   };
 
-  chat.push(entry);
-  if (chat.length > 50) chat.shift();
+  chatHistory.push(entry);
+
+  if (chatHistory.length > MAX_CHAT_MESSAGES) {
+    chatHistory.shift();
+  }
 
   io.emit('chat:message', entry);
   res.json({ ok: true });
 });
 
 io.on('connection', socket => {
-  socket.emit('chat:history', chat);
+  socket.emit('chat:history', chatHistory);
+});
+
+// Return a proper JSON error for unknown API endpoints.
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'API endpoint not found.' });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error('Request error:', err.message);
+
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  res.status(500).json({
+    error: 'Internal server error.'
+  });
 });
 
 server.listen(port, '0.0.0.0', () => {
